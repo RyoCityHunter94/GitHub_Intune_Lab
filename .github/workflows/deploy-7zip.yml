@@ -1,0 +1,44 @@
+name: Deploy 7-Zip to Intune
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-7zip.yml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version de 7-Zip à déployer'
+        required: true
+        default: '24.08'
+        
+jobs:
+  deploy:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Install PowerShell modules
+      run: |
+        Install-Module -Name Microsoft.Graph -Scope CurrentUser -Force -AllowClobber
+        Install-Module -Name IntuneWin32App -Scope CurrentUser -Force -AllowClobber
+      shell: pwsh
+      
+    - name: Deploy 7-Zip to Intune
+      run: |
+        $version = "${{ github.event.inputs.version }}"
+        if ([string]::IsNullOrEmpty($version)) {
+          $version = "24.05"
+        }
+        
+        Write-Output "Déploiement de 7-Zip version $version vers Intune..."
+        
+        # Exécuter le script de déploiement
+        .\Deploy-7ZipIntune.ps1 `
+          -TenantId "${{ secrets.TENANT_ID }}" `
+          -ClientId "${{ secrets.CLIENT_ID }}" `
+          -ClientSecret "${{ secrets.CLIENT_SECRET }}" `
+          -Version $version
+      shell: pwsh
